@@ -13,7 +13,7 @@ param.kf = 0.5;
 %%% number of robots
 N = 3;
 %%% position reference
-param.h_ref = [4;4;6;8;8;4];
+h_ref = [4;4;6;8;8;4];
 %%% initial condition
 x01 = [0;0;pi;0;0];
 x02 = [1;1;-pi/2;0;0];
@@ -22,7 +22,7 @@ x0 = [x01;x02;x03];
 
 %% simulate
 t = linspace(0, 10, 101);
-ode_fcn = @(~,x) closed_loop_ode(x, param);
+ode_fcn = @(~,x) closed_loop_ode(x, h_ref, param);
 [t,x] = ode45(ode_fcn, t, x0);
 
 %% plot
