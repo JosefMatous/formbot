@@ -1,28 +1,34 @@
 %% parameters
 %%% robot
-param.m = 1;
-param.J = 1;
-param.L = 0.5;
+param.m = 10.1;
+param.J = 0.13;
+param.L = 0.12;
 %%% control mode
 param.mode = ControlMode.Saturation;
+%%% goal distance tolerance
+param.h_tol = 0.1;
 %%% control law
-param.k = 1;
-param.kg = 1;
-param.d = 1;
-param.kf = 0.5;
+param.k = 0.1;
+param.kg = 5;
+param.d = 10;
+param.kf = 5;
 %%% number of robots
 N = 3;
-%%% position reference
-h_ref = [4;4;6;8;8;4];
-%%% initial condition
-x01 = [0;0;pi;0;0];
-x02 = [1;1;-pi/2;0;0];
-x03 = [2;0;0;0;0];
-x0 = [x01;x02;x03];
+%%% initial conditions
+x0 = [0  ; -2; pi/2; 0; 0;
+      0.5; -2; pi/2; 0; 0;
+     -0.5; -2; pi/2; 0; 0];
+%%% trajectory.
+h_ref = [[0; -3; 1; -4  ; -1; -4],...
+         [0;  4; 2;  2  ; -2;  2],...
+         [5;  6; 5;  4.5; 5; 3]] / 3;  
+%%% simulation
+duration = 17;
+Ts = 0.1;
 
 %% simulate
-t = linspace(0, 10, 101);
-ode_fcn = @(~,x) closed_loop_ode(x, h_ref, param);
+t = 0:Ts:duration;
+ode_fcn = @(t,x) closed_loop_ode(t, x, h_ref, param);
 [t,x] = ode45(ode_fcn, t, x0);
 
 %% plot
@@ -32,18 +38,22 @@ theta = x(:,3:5:end);
 
 Ts = mean(diff(t));
 
+colors = num2cell(colororder, 2);
+
 figure(1)
 clf
 hold on
 for k = 1:N
-    plot(rx(:,k), ry(:,k))
+    plot(rx(:,k), ry(:,k), 'Color', colors{k})
+    scatter([x0(5*k-4), h_ref(2*k-1,:)], [x0(5*k-3), h_ref(2*k,:)], 150, 'x', ...
+        'LineWidth', 1.5, 'MarkerEdgeColor', colors{k})
 end
 r = cell(N, 1);
 for k = 1:N
-    r{k} = robot_plot(0,0,0,'HandLength',param.L);
+    r{k} = robot_plot(0,0,0,'HandLength',param.L,'BodyColor',colors{k});
 end
-xlim([min(rx,[],'all')-1,max(rx,[],'all')+1])
-ylim([min(ry,[],'all')-1,max(ry,[],'all')+1])
+xlim([min(rx,[],'all')-0.2,max(rx,[],'all')+0.2])
+ylim([min(ry,[],'all')-0.2,max(ry,[],'all')+0.2])
 for k = 1:numel(t)
     tic
     for j = 1:N

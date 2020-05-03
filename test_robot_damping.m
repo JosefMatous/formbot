@@ -1,34 +1,41 @@
 %% parameters
 %%% robot
-param.m = 1;
-param.J = 1;
-param.L = 0.5;
+param.m = 10.1;
+param.J = 0.13;
+param.L = 0.12;
 %%% control mode
 param.mode = ControlMode.Damping;
+%%% goal distance tolerance
+param.h_tol = 0.1;
 %%% control law
-param.Kg = 50 * eye(2);
-param.D = 50 * eye(2);
+param.Kg = 10 * eye(2);
+param.D = 10 * eye(2);
 param.Kf = 5 * eye(2);
 param.A = - 5 * eye(2);
 param.P = lyap(param.A, eye(2));
 %%% number of robots
 N = 3;
-%%% position reference
-h_ref = [4;4;6;8;8;4];
-%%% initial condition
-x01 = [0;0;pi;0;0];
-x02 = [1;1;-pi/2;0;0];
-x03 = [2;0;0;0;0];
-x0 = [x01;x02;x03];
+%%% initial conditions
+x0 = [0  ; -2; pi/2; 0; 0;
+      0.5; -2; pi/2; 0; 0;
+     -0.5; -2; pi/2; 0; 0];
 
-h01 = [x01(1) + param.L*cos(x01(3)); x01(2) + param.L*sin(x01(3))];
-h02 = [x02(1) + param.L*cos(x02(3)); x02(2) + param.L*sin(x02(3))];
-h03 = [x03(1) + param.L*cos(x03(3)); x03(2) + param.L*sin(x03(3))];
-x_hat0 = - kron(eye(N), param.A) \ ([h01;h02;h03] - param.h_ref);
+h0 = zeros(2*N, 1);
+for k = 0:N-1
+    h0(2*k+1:2*k+2) = x0(5*k+1:5*k+2) + param.L * [cos(x0(5*k+3)); sin(x0(5*k+3))];
+end
+x_hat0 = - kron(eye(N), param.A) \ (h0 - h_ref(:,1));
+%%% trajectory.
+h_ref = [[0; -3; 1; -4  ; -1; -4],...
+         [0;  4; 2;  2  ; -2;  2],...
+         [5;  6; 5;  4.5; 5; 3]] / 3;  
+%%% simulation
+duration = 10;
+Ts = 0.1;
 
 %% simulate
-t = linspace(0, 10, 101);
-ode_fcn = @(~,x) closed_loop_ode(x, h_ref, param);
+t = 0:Ts:duration;
+ode_fcn = @(t,x) closed_loop_ode(t, x, h_ref, param);
 [t,x] = ode45(ode_fcn, t, [x0; x_hat0]);
 
 %% plot
@@ -38,18 +45,22 @@ theta = x(:,3:5:end);
 
 Ts = mean(diff(t));
 
+colors = num2cell(colororder, 2);
+
 figure(1)
 clf
 hold on
 for k = 1:N
-    plot(rx(:,k), ry(:,k))
+    plot(rx(:,k), ry(:,k), 'Color', colors{k})
+    scatter([x0(5*k-4), h_ref(2*k-1,:)], [x0(5*k-3), h_ref(2*k,:)], 150, 'x', ...
+        'LineWidth', 1.5, 'MarkerEdgeColor', colors{k})
 end
 r = cell(N, 1);
 for k = 1:N
-    r{k} = robot_plot(0,0,0,'HandLength',param.L);
+    r{k} = robot_plot(0,0,0,'HandLength',param.L,'BodyColor',colors{k});
 end
-xlim([min(rx,[],'all')-1,max(rx,[],'all')+1])
-ylim([min(ry,[],'all')-1,max(ry,[],'all')+1])
+xlim([min(rx,[],'all')-0.2,max(rx,[],'all')+0.2])
+ylim([min(ry,[],'all')-0.2,max(ry,[],'all')+0.2])
 for k = 1:numel(t)
     tic
     for j = 1:N
