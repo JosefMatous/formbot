@@ -42,18 +42,35 @@ classdef robot_plot < matlab.mixin.SetGet
     
     methods
         function obj = robot_plot(x, y, theta, varargin)
-            %ROBOT_PLOT Construct an instance of this class
+            % ROBOT_PLOT Construct an instance of this class
+            %
+            %   OBJ = ROBOT_PLOT(X, Y, THETA, ...) Creates a robot plot at
+            % coordinates X, Y with orientation THETA in the current axis.
+            %   OBJ = ROBOT_PLOT(X, Y, THETA, AX, ...) Optionally, you can
+            % specify the axis in which is the robot plotted.
+            %   Optional Name-Value parameters
+            %     * BodyDim - Vector of robot body dimensions 
+            %    (width - wheel to wheel, height)
+            %     * WheelDim - Vector of robot wheels dimensions          
+            %    (width, length)
+            %     * HandLength - Length of the robot "hand" line
+            %     * BodyColor - Robot body color
+            %     * WheelColor - Robot wheel color
+            %     * HandColor - Robot hand color
+            %     * HandWidth - Line width of the hand plot
+            
             ip = inputParser;
             ip.addRequired('x');
             ip.addRequired('y');
             ip.addRequired('theta');
-            ip.addOptional('BodyDim', [0.5,0.3]);
-            ip.addOptional('WheelDim', [0.2,0.35]);
-            ip.addOptional('HandLength', 0.5);
-            ip.addOptional('BodyColor', [0.4,0.4,0.4]);
-            ip.addOptional('WheelColor', [0.1,0.1,0.1]);
-            ip.addOptional('HandColor', [0.1,0.1,0.1]);
-            ip.addOptional('HandWidth', 2);
+            ip.addOptional('ax', gca, @(x) isa(x, 'matlab.graphics.axis.Axes'))
+            ip.addParameter('BodyDim', [0.1,0.1]);
+            ip.addParameter('WheelDim', [0.03,0.12]);
+            ip.addParameter('HandLength', 0.12);
+            ip.addParameter('BodyColor', [0.4,0.4,0.4]);
+            ip.addParameter('WheelColor', [0.1,0.1,0.1]);
+            ip.addParameter('HandColor', [0.1,0.1,0.1]);
+            ip.addParameter('HandWidth', 2);
             ip.parse(x, y, theta, varargin{:});
             
             obj.x = ip.Results.x;
@@ -68,10 +85,10 @@ classdef robot_plot < matlab.mixin.SetGet
             obj.HandWidth = ip.Results.HandWidth;
             
             obj.is_initialized = true;
-            obj.draw
+            obj.draw(ip.Results.ax)
         end
         
-        function draw(obj)
+        function draw(obj, ax)
             % DRAW (Re)draws the robot
             %
             % Draws the body, the wheels, and the hand.
@@ -85,7 +102,9 @@ classdef robot_plot < matlab.mixin.SetGet
             hand_x = [obj.x, obj.x + obj.HandLength*cos(obj.theta)];
             hand_y = [obj.y, obj.y + obj.HandLength*sin(obj.theta)];
             
-            ax = gca;
+            if nargin < 2
+                ax = gca;
+            end
             held = ishold(ax);
             obj.Body = fill(body_vertices(1,:), body_vertices(2,:), obj.BodyColor);
             hold(ax, 'on');
