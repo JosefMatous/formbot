@@ -135,10 +135,14 @@ classdef robot_plot < matlab.mixin.SetGet
             
             if isvalid(obj.Body) && all(isvalid(obj.Wheels)) && isvalid(obj.Hand)
                 obj.Body.Vertices = body_vertices';
+                obj.Body.FaceColor = obj.BodyColor;
                 obj.Wheels(1).Vertices = lwheel_vertices';
+                obj.Wheels(1).FaceColor = obj.WheelColor;
                 obj.Wheels(2).Vertices = rwheel_vertices';
+                obj.Wheels(2).FaceColor = obj.WheelColor;
                 obj.Hand.XData = hand_x;
                 obj.Hand.YData = hand_y;
+                obj.Hand.Color = obj.HandColor;
             else
                 error(['Error updating robot plot. One or more graphic ',...
                     'objects have been deleted. Use DRAW to draw the ',...
